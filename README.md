@@ -1,4 +1,4 @@
-\# DesktopAssistant
+# DesktopAssistant
 
 
 
@@ -6,25 +6,25 @@
 
 
 
-\## 技术栈
+## 技术栈
 
 
 
-\- C++17
+- C++17
 
-\- Qt 6
+- Qt 6
 
-\- Qt Widgets
+- Qt Widgets
 
-\- SQLite
+- SQLite
+  
+- CMake
 
-\- CMake
-
-\- Git
+- Git
 
 
 
-\## 项目结构
+## 项目结构
 
 
 

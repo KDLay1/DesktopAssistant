@@ -1,0 +1,4 @@
+#ifndef DASHBOARDPAGE_H
+#define DASHBOARDPAGE_H
+
+#endif // DASHBOARDPAGE_H

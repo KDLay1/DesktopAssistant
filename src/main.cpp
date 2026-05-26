@@ -1,13 +1,12 @@
 #include <QApplication>
-#include <QLabel>
+#include "MainWindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
-    QLabel label("DesktopAssistant is running.");
-    label.resize(400, 200);
-    label.show();
+    MainWindow window;
+    window.show();
 
     return app.exec();
 }

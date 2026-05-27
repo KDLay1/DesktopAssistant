@@ -18,6 +18,7 @@ private:
     void setupUi();
     void setupPages();
     void setupConnections();
+    void setupStyle();
 
     QListWidget *navList;
     QStackedWidget *stackedWidget;

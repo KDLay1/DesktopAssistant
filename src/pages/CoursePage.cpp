@@ -1,3 +1,15 @@
+/**
+ * @file CoursePage.cpp
+ * @brief 课程管理页面实现文件
+ * 
+ * 所属分层：Pages（界面层）
+ * 功能描述：实现课程管理页面的 UI 构建和交互逻辑，
+ *          包含课程列表、任务列表、操作按钮等界面元素。
+ * 
+ * @author tys
+ * @date 2026-06-08
+ */
+
 #include "CoursePage.h"
 
 #include <QLabel>

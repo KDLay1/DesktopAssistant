@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>src/res/role/ChrisKitty/action/drag_0.png</file>
+        <file>src/res/role/ChrisKitty/action/fall_0.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_0.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_1.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_2.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_3.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_4.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_5.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_6.png</file>
+        <file>src/res/role/ChrisKitty/action/onfloor_7.png</file>
+        <file>src/res/role/ChrisKitty/action/stand_0.png</file>
+        <file>src/res/role/ChrisKitty/action/stand_1.png</file>
+        <file>src/res/role/ChrisKitty/action/stand_2.png</file>
+        <file>src/res/role/ChrisKitty/action/stand_3.png</file>
+        <file>src/res/role/ChrisKitty/action/stand_4.png</file>
+    </qresource>
+</RCC>

@@ -2,6 +2,7 @@
 
 #include "../pages/DashboardPage.h"
 #include "../pages/FinancePage.h"
+#include "../pages/ReportPage.h"
 #include "../pages/CoursePage.h"
 #include "../pages/TimerPage.h"
 #include "../pages/TimelinePage.h"
@@ -40,6 +41,7 @@ void MainWindow::setupUi()
 
     navList->addItem("首页");
     navList->addItem("记账本");
+    navList->addItem("财务报表");
     navList->addItem("课程DDL");
     navList->addItem("学习计时");
     navList->addItem("生活轨迹");
@@ -57,7 +59,9 @@ void MainWindow::setupPages()
 {
     DashboardPage *dashboardPage = new DashboardPage(this);
 
-    FinacePage *financePage = new FinacePage(this);
+    FinancePage *financePage = new FinancePage(this);
+
+    ReportPage *reportPage = new ReportPage(this);
 
     CoursePage *coursePage = new CoursePage();
 
@@ -67,6 +71,7 @@ void MainWindow::setupPages()
 
     stackedWidget->addWidget(dashboardPage);
     stackedWidget->addWidget(financePage);
+    stackedWidget->addWidget(reportPage);
     stackedWidget->addWidget(coursePage);
     stackedWidget->addWidget(timerPage);
     stackedWidget->addWidget(timelinePage);

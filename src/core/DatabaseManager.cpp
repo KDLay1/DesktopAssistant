@@ -135,6 +135,22 @@ bool DatabaseManager::initTables()
         );
     )";
 
+    QString createCourseTable = R"(
+        CREATE TABLE IF NOT EXISTS courses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_name TEXT NOT NULL,
+            weekday INTEGER NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            location TEXT,
+            teacher TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT
+        );
+    )";
+
     QString createCounterpartDict =
         "CREATE TABLE IF NOT EXISTS dict_counterpart (id INTEGER PRIMARY KEY, name TEXT);";
     QString createSubjectDict =
@@ -156,8 +172,24 @@ bool DatabaseManager::initTables()
         || !execute(createCounterpartDict)
         || !execute(createSubjectDict)
         || !execute(createCategoryDict)
-        || !execute(createPomodoroTable)) {
+        || !execute(createPomodoroTable)
+        || !execute(createCourseTable)) {
         return false;
+    }
+
+    QSqlQuery courseColumns(m_db);
+    if (courseColumns.exec("PRAGMA table_info(courses)")) {
+        bool hasStartDate = false;
+        bool hasEndDate = false;
+        while (courseColumns.next()) {
+            const QString columnName = courseColumns.value("name").toString();
+            hasStartDate = hasStartDate || columnName == "start_date";
+            hasEndDate = hasEndDate || columnName == "end_date";
+        }
+        if ((!hasStartDate && !execute("ALTER TABLE courses ADD COLUMN start_date TEXT;"))
+            || (!hasEndDate && !execute("ALTER TABLE courses ADD COLUMN end_date TEXT;"))) {
+            return false;
+        }
     }
 
     if (loadDict("dict_counterpart").isEmpty()) {

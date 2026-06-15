@@ -141,11 +141,22 @@ bool DatabaseManager::initTables()
         "CREATE TABLE IF NOT EXISTS dict_subject (id INTEGER PRIMARY KEY, name TEXT);";
     QString createCategoryDict =
         "CREATE TABLE IF NOT EXISTS dict_category (id INTEGER PRIMARY KEY, name TEXT);";
+    QString createPomodoroTable = R"(
+        CREATE TABLE IF NOT EXISTS pomodoro_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_name TEXT NOT NULL,
+            duration_minutes INTEGER NOT NULL,
+            start_time DATETIME NOT NULL,
+            end_time DATETIME NOT NULL,
+            record_date DATE NOT NULL
+        );
+    )";
 
     if (!execute(createBillsTable)
         || !execute(createCounterpartDict)
         || !execute(createSubjectDict)
-        || !execute(createCategoryDict)) {
+        || !execute(createCategoryDict)
+        || !execute(createPomodoroTable)) {
         return false;
     }
 
@@ -257,6 +268,44 @@ QList<Bill> DatabaseManager::getAllBills()
             MoneyRecord(q.value("amount").toInt()),
             q.value("remarks").toString(),
             q.value("id").toInt()));
+    }
+    return result;
+}
+
+bool DatabaseManager::addPomodoroRecord(const QString& taskName, int durationMinutes,
+                                        const QDateTime& startTime, const QDateTime& endTime)
+{
+    QSqlQuery q(instance().database());
+    q.prepare("INSERT INTO pomodoro_records "
+              "(task_name, duration_minutes, start_time, end_time, record_date) "
+              "VALUES (:name, :duration, :start, :end, :date)");
+    q.bindValue(":name", taskName);
+    q.bindValue(":duration", durationMinutes);
+    q.bindValue(":start", startTime.toString("yyyy-MM-dd HH:mm:ss"));
+    q.bindValue(":end", endTime.toString("yyyy-MM-dd HH:mm:ss"));
+    q.bindValue(":date", startTime.date().toString("yyyy-MM-dd"));
+    return q.exec();
+}
+
+QList<QMap<QString, QVariant>> DatabaseManager::getPomodoroRecords() const
+{
+    QList<QMap<QString, QVariant>> result;
+    QSqlQuery q(instance().database());
+    q.prepare("SELECT id, task_name, duration_minutes, start_time, end_time, record_date "
+              "FROM pomodoro_records ORDER BY start_time DESC");
+    if (!q.exec()) {
+        return result;
+    }
+
+    while (q.next()) {
+        QMap<QString, QVariant> record;
+        record["id"] = q.value("id");
+        record["task_name"] = q.value("task_name");
+        record["duration_minutes"] = q.value("duration_minutes");
+        record["start_time"] = q.value("start_time");
+        record["end_time"] = q.value("end_time");
+        record["record_date"] = q.value("record_date");
+        result.append(record);
     }
     return result;
 }

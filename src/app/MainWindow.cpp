@@ -5,6 +5,7 @@
 #include "../pages/ReportPage.h"
 #include "../pages/CoursePage.h"
 #include "../pages/TimerPage.h"
+#include "../pages/PomodoroStatsPage.h"
 #include "../pages/TimelinePage.h"
 
 #include <QWidget>
@@ -44,6 +45,7 @@ void MainWindow::setupUi()
     navList->addItem("财务报表");
     navList->addItem("课程DDL");
     navList->addItem("学习计时");
+    navList->addItem("计时统计");
     navList->addItem("生活轨迹");
     navList->setFixedWidth(180);
 
@@ -67,6 +69,8 @@ void MainWindow::setupPages()
 
     TimerPage *timerPage = new TimerPage();
 
+    PomodoroStatsPage *pomodoroStatsPage = new PomodoroStatsPage(this);
+
     TimelinePage *timelinePage = new TimelinePage();
 
     stackedWidget->addWidget(dashboardPage);
@@ -74,6 +78,7 @@ void MainWindow::setupPages()
     stackedWidget->addWidget(reportPage);
     stackedWidget->addWidget(coursePage);
     stackedWidget->addWidget(timerPage);
+    stackedWidget->addWidget(pomodoroStatsPage);
     stackedWidget->addWidget(timelinePage);
 }
 

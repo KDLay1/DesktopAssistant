@@ -7,6 +7,8 @@
 #include <QString>
 #include <QList>
 #include <QMap>
+#include <QDateTime>
+#include <QVariant>
 
 #include "models/bill.h"
 
@@ -32,6 +34,10 @@ public:
     static bool deleteBill(int billId);
     static bool getBill(int billId, Bill& bill);
     static QList<Bill> getAllBills();
+
+    bool addPomodoroRecord(const QString& taskName, int durationMinutes,
+                           const QDateTime& startTime, const QDateTime& endTime);
+    QList<QMap<QString, QVariant>> getPomodoroRecords() const;
 
 private:
     explicit DatabaseManager(QObject *parent = nullptr);

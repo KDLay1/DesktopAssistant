@@ -9,7 +9,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets Sql)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Sql Multimedia)
 
 file(GLOB_RECURSE PROJECT_SOURCES
     CONFIGURE_DEPENDS
@@ -36,4 +36,8 @@ target_link_libraries(DesktopAssistant
     PRIVATE
     Qt6::Widgets
     Qt6::Sql
+    Qt6::Multimedia
 )
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/res/audio
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/res)

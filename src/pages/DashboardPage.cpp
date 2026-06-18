@@ -1,14 +1,25 @@
 #include "DashboardPage.h"
 #include "../app/Theme.h"
+#include "../core/CourseRepository.h"
+#include "../core/DatabaseManager.h"
+#include "../core/TimelineRepository.h"
 
+#include <QDate>
 #include <QFont>
+#include <QGridLayout>
 #include <QLabel>
+#include <QSqlQuery>
 #include <QVBoxLayout>
 
 DashboardPage::DashboardPage(QWidget *parent)
-    : QWidget(parent)
+    : QWidget(parent),
+      taskValueLabel(nullptr),
+      studyValueLabel(nullptr),
+      expenseValueLabel(nullptr),
+      timelineValueLabel(nullptr)
 {
     setupUI();
+    refreshData();
 }
 
 void DashboardPage::setupUI()
@@ -36,25 +47,29 @@ void DashboardPage::setupUI()
     QFrame *taskCard = createInfoCard(
         "今日任务",
         "0 个",
-        "今日待完成课程任务"
+        "今日待完成课程任务",
+        taskValueLabel
         );
 
     QFrame *studyCard = createInfoCard(
         "今日学习",
         "0 分钟",
-        "今日累计学习时长"
+        "今日累计学习时长",
+        studyValueLabel
         );
 
     QFrame *expenseCard = createInfoCard(
         "本月支出",
         "0 元",
-        "本月记账支出统计"
+        "本月记账支出统计",
+        expenseValueLabel
         );
 
     QFrame *timelineCard = createInfoCard(
         "生活轨迹",
         "暂无记录",
-        "今日生活轨迹尚未生成"
+        "今日课程、DDL和生活事件",
+        timelineValueLabel
         );
 
     taskCard->setProperty("cardTone", "rose");
@@ -75,7 +90,8 @@ void DashboardPage::setupUI()
 
 QFrame* DashboardPage::createInfoCard(const QString &title,
                                       const QString &value,
-                                      const QString &description)
+                                      const QString &description,
+                                      QLabel *&valueLabel)
 {
     QFrame *card = new QFrame(this);
     card->setObjectName("infoCard");
@@ -86,7 +102,7 @@ QFrame* DashboardPage::createInfoCard(const QString &title,
     layout->setSpacing(8);
 
     QLabel *titleLabel = new QLabel(title, card);
-    QLabel *valueLabel = new QLabel(value, card);
+    valueLabel = new QLabel(value, card);
     QLabel *descLabel = new QLabel(description, card);
 
     QFont titleFont;
@@ -110,4 +126,44 @@ QFrame* DashboardPage::createInfoCard(const QString &title,
     layout->addStretch();
 
     return card;
+}
+
+void DashboardPage::refreshData()
+{
+    QSqlDatabase db = DatabaseManager::instance().database();
+    QString today = QDate::currentDate().toString("yyyy-MM-dd");
+
+    // 课程卡片的数据由课程仓库统计
+    int taskCount = CourseRepository::unfinishedTaskCount(QDate::currentDate());
+    taskValueLabel->setText(QString("%1 个").arg(taskCount));
+
+    QSqlQuery studyQuery(db);
+    studyQuery.prepare(
+        "SELECT COALESCE(SUM(duration_minutes), 0) "
+        "FROM pomodoro_records WHERE record_date = :date");
+    studyQuery.bindValue(":date", today);
+    if (studyQuery.exec() && studyQuery.next()) {
+        studyValueLabel->setText(QString("%1 分钟").arg(studyQuery.value(0).toInt()));
+    } else {
+        studyValueLabel->setText("--");
+    }
+
+    QDate monthStart(QDate::currentDate().year(), QDate::currentDate().month(), 1);
+    QDate monthEnd = monthStart.addMonths(1).addDays(-1);
+    qint64 expenseCents = 0;
+    const QList<Bill> bills = DatabaseManager::getAllBills();
+    for (const Bill &bill : bills) {
+        QDate billDate = QDate::fromJulianDay(bill.dayNumber());
+        if (billDate >= monthStart && billDate <= monthEnd && bill.isOutflow()) {
+            expenseCents += static_cast<int>(bill.amount());
+        }
+    }
+    expenseValueLabel->setText(
+        QString("%1 元").arg(QString::number(expenseCents / 100.0, 'f', 2)));
+
+    // 时间线卡片和时间线页面使用同一份汇总结果
+    int timelineCount = TimelineRepository::recordsForDate(QDate::currentDate()).size();
+    timelineValueLabel->setText(timelineCount == 0
+        ? "暂无记录"
+        : QString("%1 条").arg(timelineCount));
 }

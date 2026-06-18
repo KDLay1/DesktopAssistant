@@ -14,11 +14,16 @@ class TimelinePage : public QWidget
 
 public:
     explicit TimelinePage(QWidget *parent = nullptr);
+    void refreshData();
 
 private:
+    // 创建页面上的控件
     void setupUi();
+    // 连接两个按钮
     void setupConnections();
+    // 从数据库整理选中日期的记录
     void generateTimeline();
+    // 保存为 Markdown 文件
     void exportMarkdown();
 
     QLabel *titleLabel;

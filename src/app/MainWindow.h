@@ -5,7 +5,9 @@
 
 class QListWidget;
 class QStackedWidget;
+class DashboardPage;
 class PomodoroStatsPage;
+class TimelinePage;
 
 class MainWindow : public QMainWindow
 {
@@ -22,7 +24,9 @@ private:
 
     QListWidget *navList;
     QStackedWidget *stackedWidget;
+    DashboardPage *dashboardPage;
     PomodoroStatsPage *pomodoroStatsPage;
+    TimelinePage *timelinePage;
 };
 
 #endif // MAINWINDOW_H

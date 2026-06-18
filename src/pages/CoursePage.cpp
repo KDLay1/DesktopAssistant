@@ -1,6 +1,6 @@
 #include "CoursePage.h"
 #include "../app/Theme.h"
-#include "../core/DatabaseManager.h"
+#include "../core/CourseRepository.h"
 #include <QLineEdit>
 #include <QStringList>
 #include <QLabel>
@@ -19,8 +19,7 @@
 #include <QTextStream>
 #include <QDateTime>
 #include <QDate>
-#include <QSqlQuery>
-#include <QSqlError>
+#include <QTime>
 #include <QDebug>
 #include <QAbstractItemView>
 #include <QDialog>
@@ -122,16 +121,16 @@ void CoursePage::setupConnection()
 {
     connect(addclassButton, &QPushButton::clicked,
             this, &CoursePage::addCourse);
-    
+
     connect(addtodoButton, &QPushButton::clicked,
             this, &CoursePage::addTask);
-    
+
     connect(deleteButton, &QPushButton::clicked,
             this, &CoursePage::deleteSelectedItem);
-    
+
     connect(finishButton, &QPushButton::clicked,
             this, &CoursePage::toggleTaskStatus);
-    
+
     connect(exportButton, &QPushButton::clicked,
             this, &CoursePage::exportToCSV);
 
@@ -260,10 +259,7 @@ void CoursePage::addCourse()
 
         int count = countSpinBox->value();
         for (int i = 0; i < count; i++) {
-            QLabel *indexLabel =new QLabel(QString("第%1次").arg(i + 1), &dialog);
-            indexLabel->setStyleSheet(
-                "color:#5f5654;font-weight:bold;"
-            );
+            QLabel *indexLabel = new QLabel(QString("第%1次").arg(i + 1), &dialog);
             indexLabel->setStyleSheet(
                 "color:#5f5654;"
                 "font-size:14px;"
@@ -344,69 +340,68 @@ void CoursePage::addCourse()
         QMessageBox::warning(this, "错误", "课程名称不能为空。");
         return;
     }
-    for (int i = 0; i < weekdayBoxes.size(); i++) {
-        QString weekday = weekdayBoxes[i]->currentText();
+
+    if (startDateEdit->date() > endDateEdit->date()) {
+        QMessageBox::warning(this, "错误", "结课日期不能早于开课日期。");
+        return;
+    }
+
+    for (int i = 0; i < startTimeEdits.size(); i++) {
         QString startTime = startTimeEdits[i]->text().trimmed();
         QString endTime = endTimeEdits[i]->text().trimmed();
-        QString location = locationEdits[i]->text().trimmed();
+        QTime start = QTime::fromString(startTime, "HH:mm");
+        QTime end = QTime::fromString(endTime, "HH:mm");
+        QStringList validStarts = {
+            "08:00", "08:50", "09:50", "10:40", "11:30",
+            "14:05", "14:55", "15:45", "16:40", "17:30",
+            "18:30", "19:20", "20:10"
+        };
+        QStringList validEnds = {
+            "08:45", "09:35", "10:35", "11:25", "12:15",
+            "14:50", "15:40", "16:30", "17:25", "18:15",
+            "19:15", "20:05", "20:55"
+        };
 
-        if (startTime.isEmpty() || endTime.isEmpty()) {
-            QMessageBox::warning(this, "错误", "开始时间和结束时间不能为空。");
+        if (!start.isValid() || !end.isValid()) {
+            QMessageBox::warning(this, "错误", "时间请按 HH:mm 格式填写，例如 08:00。");
             return;
         }
-
-        int weekdayNumber =
-            QStringList({"周一","周二","周三","周四","周五","周六","周日"})
-                .indexOf(weekday) + 1;
-
-        QSqlQuery query(DatabaseManager::instance().database());
-        query.prepare(R"(
-            INSERT INTO courses(
-                course_name,
-                weekday,
-                start_time,
-                end_time,
-                location,
-                teacher,
-                start_date,
-                end_date,
-                created_at,
-                updated_at
-            ) VALUES(
-                :course_name,
-                :weekday,
-                :start_time,
-                :end_time,
-                :location,
-                :teacher,
-                :start_date,
-                :end_date,
-                :created_at,
-                :updated_at
-            )
-        )");
-
-        QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
-        query.bindValue(":course_name", courseName);
-        query.bindValue(":weekday", weekdayNumber);
-        query.bindValue(":start_time", startTime);
-        query.bindValue(":end_time", endTime);
-        query.bindValue(":location", location);
-        query.bindValue(":teacher", teacher);
-        query.bindValue(":start_date", startDateEdit->date().toString("yyyy-MM-dd"));
-        query.bindValue(":end_date", endDateEdit->date().toString("yyyy-MM-dd"));
-        query.bindValue(":created_at", now);
-        query.bindValue(":updated_at", now);
-
-        if (!query.exec()) {
-            QMessageBox::warning(this, "错误", "添加课程失败：" + query.lastError().text());
+        if (start >= end) {
+            QMessageBox::warning(this, "错误", "结束时间必须晚于开始时间。");
+            return;
+        }
+        if (!validStarts.contains(startTime) || !validEnds.contains(endTime)) {
+            QMessageBox::warning(this, "错误", "课程时间需要和课表中的节次时间一致。");
             return;
         }
     }
+
+    QList<CourseRecord> courses;
+    for (int i = 0; i < weekdayBoxes.size(); i++) {
+        QString weekday = weekdayBoxes[i]->currentText();
+        CourseRecord course;
+        course.name = courseName;
+        course.teacher = teacher;
+        course.weekday = QStringList({"周一","周二","周三","周四","周五","周六","周日"})
+                             .indexOf(weekday) + 1;
+        course.startTime = startTimeEdits[i]->text().trimmed();
+        course.endTime = endTimeEdits[i]->text().trimmed();
+        course.location = locationEdits[i]->text().trimmed();
+        course.startDate = startDateEdit->date().toString("yyyy-MM-dd");
+        course.endDate = endDateEdit->date().toString("yyyy-MM-dd");
+        courses.append(course);
+    }
+
+    // 多条上课时间由仓库放在同一个事务中保存
+    QString error;
+    if (!CourseRepository::addCourses(courses, &error)) {
+        QMessageBox::warning(this, "错误", "添加课程失败：" + error);
+        return;
+    }
+
     refreshScheduleTable();
     updateSummary();
 }
-
 
 void CoursePage::addTask()
 {
@@ -419,6 +414,10 @@ void CoursePage::addTask()
 
     QString deadline = QInputDialog::getText(this, "截止时间", "截止时间，例如 2026-06-01 23:59：", QLineEdit::Normal, QDate::currentDate().toString("yyyy-MM-dd") + " 23:59", &ok);
     if (!ok || deadline.trimmed().isEmpty()) return;
+    if (!QDateTime::fromString(deadline.trimmed(), "yyyy-MM-dd HH:mm").isValid()) {
+        QMessageBox::warning(this, "错误", "截止时间格式不正确，请按 yyyy-MM-dd HH:mm 填写。");
+        return;
+    }
 
     QString priority = QInputDialog::getItem(this, "优先级", "优先级：", {"高", "中", "低"}, 1, false, &ok);
     if (!ok) return;
@@ -426,24 +425,17 @@ void CoursePage::addTask()
     QString description = QInputDialog::getText(this, "备注", "备注/说明：", QLineEdit::Normal, "", &ok);
     if (!ok) return;
 
-    QSqlQuery query(DatabaseManager::instance().database());
-    query.prepare(R"(
-        INSERT INTO course_tasks(course_name, task_title, description, deadline, priority, status, created_at, updated_at)
-        VALUES(:course_name, :task_title, :description, :deadline, :priority, :status, :created_at, :updated_at)
-    )");
+    CourseTaskRecord task;
+    task.courseName = courseName.trimmed();
+    task.title = taskTitle.trimmed();
+    task.description = description.trimmed();
+    task.deadline = deadline.trimmed();
+    task.priority = priorityValue(priority);
+    task.status = "未完成";
 
-    QString now = QDateTime::currentDateTime().toString(Qt::ISODate);
-    query.bindValue(":course_name", courseName.trimmed());
-    query.bindValue(":task_title", taskTitle.trimmed());
-    query.bindValue(":description", description.trimmed());
-    query.bindValue(":deadline", deadline.trimmed());
-    query.bindValue(":priority", priorityValue(priority));
-    query.bindValue(":status", "未完成");
-    query.bindValue(":created_at", now);
-    query.bindValue(":updated_at", now);
-
-    if (!query.exec()) {
-        QMessageBox::warning(this, "错误", "添加DDL失败：" + query.lastError().text());
+    QString error;
+    if (!CourseRepository::addTask(task, &error)) {
+        QMessageBox::warning(this, "错误", "添加DDL失败：" + error);
         return;
     }
 
@@ -467,12 +459,9 @@ void CoursePage::deleteSelectedItem()
             return;
         }
 
-        QSqlQuery query(DatabaseManager::instance().database());
-        query.prepare("DELETE FROM course_tasks WHERE id = :id");
-        query.bindValue(":id", id);
-
-        if (!query.exec()) {
-            QMessageBox::warning(this, "错误", "删除DDL失败：" + query.lastError().text());
+        QString error;
+        if (!CourseRepository::deleteTask(id, &error)) {
+            QMessageBox::warning(this, "错误", "删除DDL失败：" + error);
             return;
         }
 
@@ -518,14 +507,15 @@ void CoursePage::deleteSelectedItem()
         return;
     }
 
-    QSqlQuery query(DatabaseManager::instance().database());
-    query.prepare("DELETE FROM courses WHERE id = :id");
+    QList<int> courseIds;
     for (const QString &id : ids) {
-        query.bindValue(":id", id.toInt());
-        if (!query.exec()) {
-            QMessageBox::warning(this, "错误", "删除课程失败：" + query.lastError().text());
-            return;
-        }
+        courseIds.append(id.toInt());
+    }
+
+    QString error;
+    if (!CourseRepository::deleteCourses(courseIds, &error)) {
+        QMessageBox::warning(this, "错误", "删除课程失败：" + error);
+        return;
     }
 
     refreshScheduleTable();
@@ -545,14 +535,9 @@ void CoursePage::toggleTaskStatus()
     QString oldStatus = taskTable->item(row, 4)->text();
     QString newStatus = (oldStatus == "已完成") ? "未完成" : "已完成";
 
-    QSqlQuery query(DatabaseManager::instance().database());
-    query.prepare("UPDATE course_tasks SET status = :status, updated_at = :updated_at WHERE id = :id");
-    query.bindValue(":status", newStatus);
-    query.bindValue(":updated_at", QDateTime::currentDateTime().toString(Qt::ISODate));
-    query.bindValue(":id", id);
-
-    if (!query.exec()) {
-        QMessageBox::warning(this, "错误", "更新任务状态失败：" + query.lastError().text());
+    QString error;
+    if (!CourseRepository::updateTaskStatus(id, newStatus, &error)) {
+        QMessageBox::warning(this, "错误", "更新任务状态失败：" + error);
         return;
     }
 
@@ -578,27 +563,23 @@ void CoursePage::exportToCSV()
 
     out << "类型,课程,任务/时间,截止/地点,优先级/教师,状态/星期,日期范围/备注\n";
 
-    QSqlQuery courseQuery = DatabaseManager::instance().query(
-        "SELECT course_name, weekday, start_time, end_time, location, teacher FROM courses ORDER BY weekday, start_time"
-    );
-    while (courseQuery.next()) {
-        out << "课程," << courseQuery.value(0).toString() << ","
-            << courseQuery.value(2).toString() << "-" << courseQuery.value(3).toString() << ","
-            << courseQuery.value(4).toString() << ","
-            << courseQuery.value(5).toString() << ","
-            << weekdayText(courseQuery.value(1).toInt()) << ",\n";
+    const QList<CourseRecord> courses = CourseRepository::allCourses();
+    for (const CourseRecord &course : courses) {
+        out << "课程," << course.name << ","
+            << course.startTime << "-" << course.endTime << ","
+            << course.location << ","
+            << course.teacher << ","
+            << weekdayText(course.weekday) << ",\n";
     }
 
-    QSqlQuery taskQuery = DatabaseManager::instance().query(
-        "SELECT course_name, task_title, deadline, priority, status, description FROM course_tasks ORDER BY status, deadline, priority"
-    );
-    while (taskQuery.next()) {
-        out << "DDL," << taskQuery.value(0).toString() << ","
-            << taskQuery.value(1).toString() << ","
-            << taskQuery.value(2).toString() << ","
-            << priorityText(taskQuery.value(3).toInt()) << ","
-            << taskQuery.value(4).toString() << ","
-            << taskQuery.value(5).toString() << "\n";
+    const QList<CourseTaskRecord> tasks = CourseRepository::tasksForExport();
+    for (const CourseTaskRecord &task : tasks) {
+        out << "DDL," << task.courseName << ","
+            << task.title << ","
+            << task.deadline << ","
+            << priorityText(task.priority) << ","
+            << task.status << ","
+            << task.description << "\n";
     }
 
     file.close();
@@ -609,42 +590,27 @@ void CoursePage::refreshScheduleTable(const QDate &date)
 {
     scheduleTable->clearContents();
 
-    QSqlQuery query(DatabaseManager::instance().database());
-    query.prepare(
-        "SELECT id, course_name, weekday, start_time, end_time, location, teacher "
-        "FROM courses "
-        "WHERE (start_date IS NULL OR start_date = '' OR start_date <= :date) "
-        "AND (end_date IS NULL OR end_date = '' OR end_date >= :date) "
-        "ORDER BY weekday, start_time"
-    );
-    query.bindValue(":date", date.toString("yyyy-MM-dd"));
-    if (!query.exec()) {
-        QMessageBox::warning(this, "错误", "查询课程失败：" + query.lastError().text());
+    QString error;
+    const QList<CourseRecord> courses = CourseRepository::coursesForDate(date, &error);
+    if (!error.isEmpty()) {
+        QMessageBox::warning(this, "错误", "查询课程失败：" + error);
         return;
     }
 
-    while (query.next()) {
-        int id = query.value(0).toInt();
-        QString courseName = query.value(1).toString();
-        int weekday = query.value(2).toInt();
-        QString startTime = query.value(3).toString();
-        QString endTime = query.value(4).toString();
-        QString location = query.value(5).toString();
-        QString teacher = query.value(6).toString();
-
-        int col = weekday - 1;
+    for (const CourseRecord &course : courses) {
+        int col = course.weekday - 1;
         if (col < 0 || col > 6) continue;
 
-        int startRow = timeToRow(startTime);
-        int endRow = endTimeToRow(endTime);
+        int startRow = timeToRow(course.startTime);
+        int endRow = endTimeToRow(course.endTime);
 
         if (startRow < 0 || endRow < 0 || endRow < startRow) {
             continue;
         }
 
-        QString text = courseName + "\n" + startTime + "-" + endTime;
-        if (!location.isEmpty()) text += "\n@" + location;
-        if (!teacher.isEmpty()) text += "\n" + teacher;
+        QString text = course.name + "\n" + course.startTime + "-" + course.endTime;
+        if (!course.location.isEmpty()) text += "\n@" + course.location;
+        if (!course.teacher.isEmpty()) text += "\n" + course.teacher;
 
         for (int row = startRow; row <= endRow; row++)
         {
@@ -659,15 +625,15 @@ void CoursePage::refreshScheduleTable(const QDate &date)
                     ids += ",";
                 }
 
-                ids += QString::number(id);
+                ids += QString::number(course.id);
 
                 oldItem->setData(Qt::UserRole, ids);
                 oldItem->setBackground(Theme::conflictCellColor());
             } else {
                 QTableWidgetItem *item = new QTableWidgetItem(text);
                 item->setTextAlignment(Qt::AlignCenter);
-                item->setData(Qt::UserRole, QString::number(id));
-                item->setBackground(courseColor(courseName));
+                item->setData(Qt::UserRole, QString::number(course.id));
+                item->setBackground(courseColor(course.name));
                 scheduleTable->setItem(row, col, item);
             }
         }
@@ -678,27 +644,22 @@ void CoursePage::refreshTaskTable()
 {
     taskTable->setRowCount(0);
 
-    QSqlQuery query = DatabaseManager::instance().query(
-        "SELECT id, course_name, task_title, deadline, priority, status, description "
-        "FROM course_tasks ORDER BY status DESC, deadline ASC, priority ASC"
-    );
-
+    const QList<CourseTaskRecord> tasks = CourseRepository::allTasks();
     int row = 0;
-    while (query.next()) {
+    for (const CourseTaskRecord &task : tasks) {
         taskTable->insertRow(row);
 
-        QString courseName = query.value(1).toString();
-        QColor color = courseColor(courseName);
+        QColor color = courseColor(task.courseName);
 
-        QTableWidgetItem *courseItem = new QTableWidgetItem(courseName);
-        courseItem->setData(Qt::UserRole, query.value(0).toInt());
+        QTableWidgetItem *courseItem = new QTableWidgetItem(task.courseName);
+        courseItem->setData(Qt::UserRole, task.id);
 
         taskTable->setItem(row, 0, courseItem);
-        taskTable->setItem(row, 1, new QTableWidgetItem(query.value(2).toString()));
-        taskTable->setItem(row, 2, new QTableWidgetItem(query.value(3).toString()));
-        taskTable->setItem(row, 3, new QTableWidgetItem(priorityText(query.value(4).toInt())));
-        taskTable->setItem(row, 4, new QTableWidgetItem(query.value(5).toString()));
-        taskTable->setItem(row, 5, new QTableWidgetItem(query.value(6).toString()));
+        taskTable->setItem(row, 1, new QTableWidgetItem(task.title));
+        taskTable->setItem(row, 2, new QTableWidgetItem(task.deadline));
+        taskTable->setItem(row, 3, new QTableWidgetItem(priorityText(task.priority)));
+        taskTable->setItem(row, 4, new QTableWidgetItem(task.status));
+        taskTable->setItem(row, 5, new QTableWidgetItem(task.description));
 
         for (int col = 0; col < 6; col++) {
             if (taskTable->item(row, col)) {
@@ -712,19 +673,8 @@ void CoursePage::refreshTaskTable()
 
 void CoursePage::updateSummary()
 {
-    QSqlQuery unfinished = DatabaseManager::instance().query(
-        "SELECT COUNT(*) FROM course_tasks WHERE status != '已完成'"
-    );
-    int unfinishedCount = unfinished.next() ? unfinished.value(0).toInt() : 0;
-
-    int todayWeekday = QDate::currentDate().dayOfWeek();
-    QSqlQuery todayCourse(DatabaseManager::instance().database());
-    todayCourse.prepare("SELECT COUNT(*) FROM courses WHERE weekday = :weekday");
-    todayCourse.bindValue(":weekday", todayWeekday);
-    int todayCourseCount = 0;
-    if (todayCourse.exec() && todayCourse.next()) {
-        todayCourseCount = todayCourse.value(0).toInt();
-    }
+    int unfinishedCount = CourseRepository::unfinishedTaskCount();
+    int todayCourseCount = CourseRepository::courseCount(QDate::currentDate());
 
     summaryLabel->setText(QString("剩余DDL：%1件    今日课程：%2节")
                           .arg(unfinishedCount)

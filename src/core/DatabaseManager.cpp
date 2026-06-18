@@ -5,6 +5,8 @@
 #include <QSqlQuery>
 #include <QVariant>
 
+#include "CourseRepository.h"
+#include "TimelineRepository.h"
 #include "models/CategoryID.h"
 
 DatabaseManager& DatabaseManager::instance()
@@ -82,45 +84,6 @@ bool DatabaseManager::initTables()
         );
     )";
 
-    QString createCourseTaskTable = R"(
-        CREATE TABLE IF NOT EXISTS course_tasks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            course_name TEXT NOT NULL,
-            task_title TEXT NOT NULL,
-            description TEXT,
-            deadline TEXT,
-            priority INTEGER,
-            status TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT
-        );
-    )";
-
-    QString createWorkSessionTable = R"(
-        CREATE TABLE IF NOT EXISTS work_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            category TEXT,
-            start_time TEXT NOT NULL,
-            end_time TEXT,
-            duration_minutes INTEGER,
-            note TEXT,
-            created_at TEXT NOT NULL
-        );
-    )";
-
-    QString createLifeEventTable = R"(
-        CREATE TABLE IF NOT EXISTS life_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_type TEXT NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            related_path TEXT,
-            event_time TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        );
-    )";
-
     QString createBillsTable = R"(
         CREATE TABLE IF NOT EXISTS bills (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,22 +95,6 @@ bool DatabaseManager::initTables()
             amount INTEGER NOT NULL,
             remarks TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    )";
-
-    QString createCourseTable = R"(
-        CREATE TABLE IF NOT EXISTS courses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            course_name TEXT NOT NULL,
-            weekday INTEGER NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
-            location TEXT,
-            teacher TEXT,
-            start_date TEXT,
-            end_date TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT
         );
     )";
 
@@ -172,45 +119,46 @@ bool DatabaseManager::initTables()
         || !execute(createCounterpartDict)
         || !execute(createSubjectDict)
         || !execute(createCategoryDict)
-        || !execute(createPomodoroTable)
-        || !execute(createCourseTable)) {
+        || !execute(createPomodoroTable)) {
         return false;
     }
 
-    QSqlQuery courseColumns(m_db);
-    if (courseColumns.exec("PRAGMA table_info(courses)")) {
-        bool hasStartDate = false;
-        bool hasEndDate = false;
-        while (courseColumns.next()) {
-            const QString columnName = courseColumns.value("name").toString();
-            hasStartDate = hasStartDate || columnName == "start_date";
-            hasEndDate = hasEndDate || columnName == "end_date";
-        }
-        if ((!hasStartDate && !execute("ALTER TABLE courses ADD COLUMN start_date TEXT;"))
-            || (!hasEndDate && !execute("ALTER TABLE courses ADD COLUMN end_date TEXT;"))) {
+    QString error;
+    if (!CourseRepository::initTables(m_db, &error)) {
+        qDebug() << "Course tables init failed:" << error;
+        return false;
+    }
+    if (!TimelineRepository::initTables(m_db, &error)) {
+        qDebug() << "Timeline tables init failed:" << error;
+        return false;
+    }
+
+    if (loadDict("dict_counterpart").isEmpty()) {
+        if (!saveDictItem("dict_counterpart", 101, "美团外卖")
+            || !saveDictItem("dict_counterpart", 102, "星巴克")
+            || !saveDictItem("dict_counterpart", 103, "公司财务部")
+            || !saveDictItem("dict_counterpart", 104, "湖滨食堂")) {
             return false;
         }
     }
 
-    if (loadDict("dict_counterpart").isEmpty()) {
-        saveDictItem("dict_counterpart", 101, "美团外卖");
-        saveDictItem("dict_counterpart", 102, "星巴克");
-        saveDictItem("dict_counterpart", 103, "公司财务部");
-        saveDictItem("dict_counterpart", 104, "湖滨食堂");
-
-        saveDictItem("dict_subject", 0xFF01, "招商银行储蓄卡");
-        saveDictItem("dict_subject", 0xFF02, "微信余额");
-        saveDictItem("dict_subject", 0xFF03, "支付宝");
-
-        saveDictItem("dict_category", CategoryID(false, 1, false, 1).id(), "餐饮美食");
-        saveDictItem("dict_category", CategoryID(false, 2, false, 1).id(), "交通出行");
-        saveDictItem("dict_category", CategoryID(true, 1, false, 1).id(), "工资收入");
+    if (loadDict("dict_subject").isEmpty()) {
+        if (!saveDictItem("dict_subject", 0xFF01, "招商银行储蓄卡")
+            || !saveDictItem("dict_subject", 0xFF02, "微信余额")
+            || !saveDictItem("dict_subject", 0xFF03, "支付宝")) {
+            return false;
+        }
     }
 
-    return execute(createFinanceTable)
-           && execute(createCourseTaskTable)
-           && execute(createWorkSessionTable)
-           && execute(createLifeEventTable);
+    if (loadDict("dict_category").isEmpty()) {
+        if (!saveDictItem("dict_category", CategoryID(false, 1, false, 1).id(), "餐饮美食")
+            || !saveDictItem("dict_category", CategoryID(false, 2, false, 1).id(), "交通出行")
+            || !saveDictItem("dict_category", CategoryID(true, 1, false, 1).id(), "工资收入")) {
+            return false;
+        }
+    }
+
+    return execute(createFinanceTable);
 }
 
 bool DatabaseManager::saveDictItem(const QString& tableName, quint16 id, const QString& name)

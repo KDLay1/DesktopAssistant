@@ -16,17 +16,13 @@
 #include <QStackedWidget>
 #include <QWidget>
 
-namespace {
-
-constexpr int kStatsPageIndex = 5;
-
-}
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent),
       navList(nullptr),
       stackedWidget(nullptr),
-      pomodoroStatsPage(nullptr)
+      dashboardPage(nullptr),
+      pomodoroStatsPage(nullptr),
+      timelinePage(nullptr)
 {
     setupUi();
     setupPages();
@@ -67,13 +63,13 @@ void MainWindow::setupUi()
 
 void MainWindow::setupPages()
 {
-    auto *dashboardPage = new DashboardPage(this);
+    dashboardPage = new DashboardPage(this);
     auto *financePage = new FinancePage(this);
     auto *reportPage = new ReportPage(this);
     auto *coursePage = new CoursePage(this);
     auto *timerPage = new TimerPage(this);
     pomodoroStatsPage = new PomodoroStatsPage(this);
-    auto *timelinePage = new TimelinePage(this);
+    timelinePage = new TimelinePage(this);
 
     stackedWidget->addWidget(dashboardPage);
     stackedWidget->addWidget(financePage);
@@ -88,8 +84,15 @@ void MainWindow::setupConnections()
 {
     connect(navList, &QListWidget::currentRowChanged, stackedWidget, &QStackedWidget::setCurrentIndex);
     connect(navList, &QListWidget::currentRowChanged, this, [this](int row) {
-        if (row == kStatsPageIndex && pomodoroStatsPage != nullptr) {
+        QWidget *page = stackedWidget->widget(row);
+        if (page == dashboardPage) {
+            dashboardPage->refreshData();
+        }
+        if (page == pomodoroStatsPage) {
             pomodoroStatsPage->refreshData();
+        }
+        if (page == timelinePage) {
+            timelinePage->refreshData();
         }
     });
 }

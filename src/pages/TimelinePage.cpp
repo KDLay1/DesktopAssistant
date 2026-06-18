@@ -1,5 +1,6 @@
 #include "TimelinePage.h"
 
+#include "../app/Theme.h"
 #include "../core/DatabaseManager.h"
 
 #include <algorithm>
@@ -78,6 +79,9 @@ void TimelinePage::setupUi()
 
     generateButton = new QPushButton("生成时间线", this);
     exportButton = new QPushButton("导出 Markdown", this);
+
+    generateButton->setProperty("buttonRole", "rose");
+    exportButton->setProperty("buttonRole", "sunny");
 
     auto *topLayout = new QHBoxLayout;
     topLayout->addWidget(dateEdit);

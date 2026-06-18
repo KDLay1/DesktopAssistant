@@ -11,6 +11,7 @@
  */
 
 #include "TimerPage.h"
+#include "../app/Theme.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -75,7 +76,6 @@ void TimerPage::setupUI()
     // 1. 设置面板 (任务名、专注时长、休息时长)
     // ==========================================
     QGroupBox *settingsGroup = new QGroupBox("番茄钟设置", this);
-    settingsGroup->setStyleSheet("QGroupBox { font-size: 16px; font-weight: bold; border: 2px solid #bdc3c7; border-radius: 8px; margin-top: 20px; } QGroupBox::title { subcontrol-origin: margin; left: 20px; padding: 0 5px; }");
     
     // 创建表单布局，用于排列设置项
     QFormLayout *formLayout = new QFormLayout(settingsGroup);
@@ -85,21 +85,18 @@ void TimerPage::setupUI()
     // 任务名称输入框
     taskNameInput = new QLineEdit(this);
     taskNameInput->setPlaceholderText("例如：复习高等数学...");
-    taskNameInput->setStyleSheet("padding: 8px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc;");
 
     // 专注时长选择器（1-120分钟，默认25分钟）
     focusTimeSpin = new QSpinBox(this);
     focusTimeSpin->setRange(1, 120);
     focusTimeSpin->setValue(25); // 默认25分钟
     focusTimeSpin->setSuffix(" 分钟");
-    focusTimeSpin->setStyleSheet("padding: 8px; font-size: 14px;");
 
     // 休息时长选择器（1-60分钟，默认5分钟）
     restTimeSpin = new QSpinBox(this);
     restTimeSpin->setRange(1, 60);
     restTimeSpin->setValue(5); // 默认5分钟
     restTimeSpin->setSuffix(" 分钟");
-    restTimeSpin->setStyleSheet("padding: 8px; font-size: 14px;");
 
     // 将设置项添加到表单布局
     formLayout->addRow("🎯 任务名称:", taskNameInput);
@@ -112,12 +109,12 @@ void TimerPage::setupUI()
     // 状态标签，显示当前状态信息
     statusLabel = new QLabel("准备就绪", this);
     statusLabel->setAlignment(Qt::AlignCenter);
-    statusLabel->setStyleSheet("font-size: 22px; font-weight: bold; color: #34495E; margin-top: 30px;");
+    statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().navSelectedText));
 
     // 时间显示标签，大字体显示倒计时
     timeDisplayLabel = new QLabel("25:00", this);
     timeDisplayLabel->setAlignment(Qt::AlignCenter);
-    timeDisplayLabel->setStyleSheet("font-size: 100px; font-weight: bold; color: #E74C3C; font-family: 'Arial';");
+    timeDisplayLabel->setStyleSheet(Theme::timerDisplayStyle(Theme::palette().peach));
 
     // ==========================================
     // 3. 控制按钮区
@@ -131,10 +128,12 @@ void TimerPage::setupUI()
     btnStop = new QPushButton("⏹️ 放弃", this);
 
     // 设置按钮样式，不同功能使用不同颜色
-    QString btnStyle = "QPushButton { font-size: 18px; font-weight: bold; color: white; border-radius: 8px; padding: 12px 0px; }";
-    btnStartPomo->setStyleSheet(btnStyle + "background-color: #E74C3C;");
-    btnStartRest->setStyleSheet(btnStyle + "background-color: #2ECC71;");
-    btnStop->setStyleSheet(btnStyle + "background-color: #95A5A6;");
+    btnStartPomo->setProperty("buttonRole", "rose");
+    btnStartRest->setProperty("buttonRole", "mint");
+    btnStop->setProperty("buttonRole", "neutral");
+    btnStartPomo->setMinimumHeight(48);
+    btnStartRest->setMinimumHeight(48);
+    btnStop->setMinimumHeight(48);
     
     // 设置鼠标悬停样式
     btnStartPomo->setCursor(Qt::PointingHandCursor);
@@ -207,7 +206,8 @@ void TimerPage::startPomodoro() {
     
     // 更新状态显示
     statusLabel->setText(QString("正在专注：%1").arg(currentTaskName));
-    timeDisplayLabel->setStyleSheet("font-size: 100px; font-weight: bold; color: #E74C3C; font-family: 'Arial';");
+    statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().rose));
+    timeDisplayLabel->setStyleSheet(Theme::timerDisplayStyle(Theme::palette().rose));
     
     // 禁用设置，防止专注中途修改
     taskNameInput->setEnabled(false);
@@ -237,7 +237,8 @@ void TimerPage::startRest() {
     
     // 更新状态显示，使用绿色主题
     statusLabel->setText("休息中，喝口水放松一下吧~");
-    timeDisplayLabel->setStyleSheet("font-size: 100px; font-weight: bold; color: #2ECC71; font-family: 'Arial';");
+    statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().mint));
+    timeDisplayLabel->setStyleSheet(Theme::timerDisplayStyle(Theme::palette().mint));
 
     // 停止所有音频播放
     bgmPlayer->stop();
@@ -263,7 +264,8 @@ void TimerPage::stopTimer() {
     // 重置显示为初始状态
     setTimeDisplay(focusTimeSpin->value() * 60);
     statusLabel->setText("已停止");
-    timeDisplayLabel->setStyleSheet("font-size: 100px; font-weight: bold; color: #95A5A6; font-family: 'Arial';");
+    statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().textSecondary));
+    timeDisplayLabel->setStyleSheet(Theme::timerDisplayStyle(Theme::palette().textSecondary));
 
     // 恢复设置面板，允许用户修改参数
     taskNameInput->setEnabled(true);
@@ -312,6 +314,7 @@ void TimerPage::updateTimer() {
 
             // 为了用户体验，延迟 1.5 秒再自动进入休息（让用户能看清专注成功的提示）
             statusLabel->setText("专注结束！即将自动进入休息...");
+            statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().peach));
             QTimer::singleShot(1500, this, [=]() {
                 startRest(); 
             });
@@ -320,7 +323,8 @@ void TimerPage::updateTimer() {
             // B. 刚才在休息：休息结束，恢复初始状态
             stopTimer(); // 恢复设置面板
             statusLabel->setText("休息结束，准备开始下一轮吧！");
-            timeDisplayLabel->setStyleSheet("font-size: 100px; font-weight: bold; color: #34495E; font-family: 'Arial';");
+            statusLabel->setStyleSheet(Theme::timerStatusStyle(Theme::palette().navSelectedText));
+            timeDisplayLabel->setStyleSheet(Theme::timerDisplayStyle(Theme::palette().navSelectedText));
             
         }
     }

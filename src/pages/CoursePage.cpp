@@ -1,4 +1,5 @@
 #include "CoursePage.h"
+#include "../app/Theme.h"
 #include "../core/DatabaseManager.h"
 #include <QLineEdit>
 #include <QStringList>
@@ -55,6 +56,7 @@ void CoursePage::setupUI()
     titleLabel->setFont(titleFont);
 
     summaryLabel = new QLabel(this);
+    summaryLabel->setStyleSheet(Theme::subtleTextStyle());
 
     addclassButton = new QPushButton("添加课程", this);
     addtodoButton = new QPushButton("添加DDL", this);
@@ -66,6 +68,14 @@ void CoursePage::setupUI()
     scheduleDateEdit = new QDateEdit(this);
     scheduleDateEdit->setCalendarPopup(true);
     scheduleDateEdit->setDate(QDate::currentDate());
+
+    addclassButton->setProperty("buttonRole", "peach");
+    addtodoButton->setProperty("buttonRole", "rose");
+    deleteButton->setProperty("buttonRole", "neutral");
+    finishButton->setProperty("buttonRole", "mint");
+    exportButton->setProperty("buttonRole", "sunny");
+    todayButton->setProperty("buttonRole", "lavender");
+    nextWeekButton->setProperty("buttonRole", "lavender");
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(addclassButton);
@@ -149,6 +159,7 @@ void CoursePage::addCourse()
     QDialog dialog(this);
     dialog.setWindowTitle("添加课程");
     dialog.resize(850, 420);
+    dialog.setStyleSheet(Theme::dialogStyle());
 
     QVBoxLayout *mainLayout = new QVBoxLayout(&dialog);
 
@@ -199,11 +210,11 @@ void CoursePage::addCourse()
     QLabel *countLabel = new QLabel("一周上课次数：", &dialog);
     QLabel *startDateLabel = new QLabel("开始日期：", &dialog);
     QLabel *endDateLabel = new QLabel("结束日期：", &dialog);
-    courseLabel->setStyleSheet("color:white;");
-    teacherLabel->setStyleSheet("color:white;");
-    countLabel->setStyleSheet("color:white;");
-    startDateLabel->setStyleSheet("color:white;");
-    endDateLabel->setStyleSheet("color:white;");
+    courseLabel->setStyleSheet("color:#5f5654;");
+    teacherLabel->setStyleSheet("color:#5f5654;");
+    countLabel->setStyleSheet("color:#5f5654;");
+    startDateLabel->setStyleSheet("color:#5f5654;");
+    endDateLabel->setStyleSheet("color:#5f5654;");
 
     topLayout->addRow(courseLabel, courseNameEdit);
     topLayout->addRow(teacherLabel, teacherEdit);
@@ -226,7 +237,7 @@ void CoursePage::addCourse()
     for (int i = 0; i < headers.size(); i++) {
         QLabel *label = new QLabel(headers[i], &dialog);
         label->setAlignment(Qt::AlignCenter);
-        label->setStyleSheet("color:white; font-weight:bold;");
+        label->setStyleSheet("color:#5f5654; font-weight:bold;");
         timeLayout->addWidget(label, 0, i);
     }
 
@@ -251,10 +262,10 @@ void CoursePage::addCourse()
         for (int i = 0; i < count; i++) {
             QLabel *indexLabel =new QLabel(QString("第%1次").arg(i + 1), &dialog);
             indexLabel->setStyleSheet(
-                "color:white;font-weight:bold;"
+                "color:#5f5654;font-weight:bold;"
             );
             indexLabel->setStyleSheet(
-                "color:white;"
+                "color:#5f5654;"
                 "font-size:14px;"
                 "font-weight:bold;"
             );
@@ -400,10 +411,6 @@ void CoursePage::addCourse()
 void CoursePage::addTask()
 {
     bool ok = false;
-    qApp->setStyleSheet(
-        qApp->styleSheet() +
-        "QInputDialog QLineEdit { color: black; background-color: white; }"
-    );
     QString courseName = QInputDialog::getText(this, "课程", "所属课程：", QLineEdit::Normal, "", &ok);
     if (!ok || courseName.trimmed().isEmpty()) return;
 
@@ -655,7 +662,7 @@ void CoursePage::refreshScheduleTable(const QDate &date)
                 ids += QString::number(id);
 
                 oldItem->setData(Qt::UserRole, ids);
-                oldItem->setBackground(QColor(220, 220, 220));
+                oldItem->setBackground(Theme::conflictCellColor());
             } else {
                 QTableWidgetItem *item = new QTableWidgetItem(text);
                 item->setTextAlignment(Qt::AlignCenter);
@@ -747,18 +754,7 @@ QString CoursePage::weekdayText(int weekday) const
 
 QColor CoursePage::courseColor(const QString &courseName) const
 {
-    static QVector<QColor> colors =
-    {
-        QColor(52,152,219),   // 蓝
-        QColor(231,76,60),    // 红
-        QColor(46,204,113),   // 绿
-        QColor(155,89,182),   // 紫
-        QColor(241,196,15),   // 黄
-        QColor(230,126,34),   // 橙
-        QColor(26,188,156),   // 青
-        QColor(127,140,141)   // 灰
-    };
-
+    const auto &colors = Theme::courseColors();
     uint hash = qHash(courseName);
 
     return colors[hash % colors.size()];

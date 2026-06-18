@@ -11,6 +11,7 @@
  */
 
 #include "financepage.h"
+#include "../app/Theme.h"
 #include "core/DatabaseManager.h"
 #include <QLabel>
 #include <QPushButton>
@@ -92,7 +93,7 @@ void FinancePage::setupUI()
     titleLabel->setFont(titleFont);
     
     summaryLabel = new QLabel("本月收入：0 元    本月支出：0 元    结余：0 元", this);
-    summaryLabel->setStyleSheet("color: #555555; font-size: 14px; margin-bottom: 10px;");
+    summaryLabel->setStyleSheet(Theme::subtleTextStyle() + " margin-bottom: 10px;");
 
     // 2. 搜索框
     QHBoxLayout *searchLayout = new QHBoxLayout;
@@ -107,6 +108,11 @@ void FinancePage::setupUI()
     deleteButton = new QPushButton("删除记录", this);
     importButton = new QPushButton("导入 CSV", this); 
     exportButton = new QPushButton("导出 CSV", this);
+
+    addButton->setProperty("buttonRole", "peach");
+    deleteButton->setProperty("buttonRole", "rose");
+    importButton->setProperty("buttonRole", "mint");
+    exportButton->setProperty("buttonRole", "sunny");
 
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->addWidget(addButton);
@@ -139,12 +145,24 @@ void FinancePage::setupUI()
     recordTableView->horizontalHeader()->setSectionResizeMode(6, QHeaderView::Stretch); // 备注列自动拉伸
 
     this->setStyleSheet(R"(
-        QTableView { background-color: #FFFFFF; alternate-background-color: #F8F9FA; border: 1px solid #E0E0E0; border-radius: 8px; selection-background-color: #E3F2FD; selection-color: #1565C0; font-size: 13px; }
-        QHeaderView::section { background-color: #F1F3F5; color: #495057; padding: 8px; border: none; border-bottom: 2px solid #DEE2E6; font-weight: bold; font-size: 14px; }
-        QPushButton { background-color: #3B82F6; color: white; border-radius: 6px; padding: 6px 16px; font-weight: bold; }
-        QPushButton:hover { background-color: #2563EB; }
-        QPushButton:pressed { background-color: #1D4ED8; }
-        QLineEdit { padding: 6px; border: 1px solid #CED4DA; border-radius: 6px; }
+        QTableView { background-color: #fffdf9; alternate-background-color: #fef1e8; border: 1px solid #f6d6c3; border-radius: 14px; selection-background-color: #daf1ee; selection-color: #5f5654; font-size: 13px; }
+        QHeaderView::section { background-color: #fce0b9; color: #5f5654; padding: 8px; border: none; border-bottom: 1px solid #ffd5d9; font-weight: bold; font-size: 14px; }
+        QPushButton { background-color: #c9d4f7; color: #6279ba; border-radius: 12px; padding: 6px 16px; font-weight: bold; border: none; }
+        QPushButton:hover { background-color: #acbfeb; }
+        QPushButton:pressed { background-color: #778ccc; color: white; }
+        QPushButton[buttonRole="peach"] { background-color: #fdb78e; color: white; }
+        QPushButton[buttonRole="peach"]:hover { background-color: #fd8d6e; }
+        QPushButton[buttonRole="peach"]:pressed { background-color: #ef836c; }
+        QPushButton[buttonRole="mint"] { background-color: #9adbc5; color: #426760; }
+        QPushButton[buttonRole="mint"]:hover { background-color: #a1dee0; }
+        QPushButton[buttonRole="mint"]:pressed { background-color: #71bcec; color: white; }
+        QPushButton[buttonRole="rose"] { background-color: #fa86a9; color: white; }
+        QPushButton[buttonRole="rose"]:hover { background-color: #ee84a8; }
+        QPushButton[buttonRole="rose"]:pressed { background-color: #d35b7e; }
+        QPushButton[buttonRole="sunny"] { background-color: #fce0b9; color: #806736; }
+        QPushButton[buttonRole="sunny"]:hover { background-color: #fad354; }
+        QPushButton[buttonRole="sunny"]:pressed { background-color: #f7cf83; }
+        QLineEdit { padding: 6px; border: 1px solid #f6d6c3; border-radius: 10px; background-color: #fffdf9; }
     )");
  
     // 5. 底部状态栏
@@ -155,7 +173,7 @@ void FinancePage::setupUI()
     QLabel *lblDbPath = new QLabel("当前数据库: lifemate.db", this);
     lblStatusTotal = new QLabel("总行数: 0", this);
 
-    QString statusStyle = "color: #555; font-size: 12px; font-weight: bold;";
+    QString statusStyle = Theme::footerTextStyle();
     lblStatusDate->setStyleSheet(statusStyle);
     lblDbPath->setStyleSheet(statusStyle);
     lblStatusTotal->setStyleSheet(statusStyle);
@@ -223,7 +241,7 @@ void FinancePage::refreshData()
         QString typeStr = bill.isOutflow() ? "支出" : (bill.isInflow() ? "收入" : "其他");
         auto *typeItem = new QStandardItem(typeStr);
         typeItem->setData(bill.id(), Qt::UserRole); // 在 UserRole 中存储账单ID，用于删除操作
-        typeItem->setForeground(bill.isOutflow() ? QColor("#E53935") : QColor("#43A047")); 
+        typeItem->setForeground(bill.isOutflow() ? Theme::outflowColor() : Theme::inflowColor());
         rowItems << typeItem;
 
         // 对手方列

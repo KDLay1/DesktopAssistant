@@ -1,4 +1,5 @@
 #include "PomodoroStatsPage.h"
+#include "../app/Theme.h"
 #include "../core/DatabaseManager.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -24,6 +25,7 @@ void PomodoroStatsPage::setupUI() {
 
     // 刷新按钮
     refreshButton = new QPushButton("刷新数据", this);
+    refreshButton->setProperty("buttonRole", "lavender");
     connect(refreshButton, &QPushButton::clicked, this, &PomodoroStatsPage::refreshData);
 
     // 表格

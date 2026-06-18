@@ -10,6 +10,7 @@
  */
 
 #include "ReportPage.h"
+#include "../app/Theme.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
@@ -56,7 +57,6 @@ void ReportPage::setupUI()
     // 1. 高级查询面板
     // ==========================================
     QGroupBox *groupBox = new QGroupBox("🔍 高级查询条件", this);
-    groupBox->setStyleSheet("QGroupBox { font-weight: bold; border: 1px solid #CCC; border-radius: 5px; margin-top: 10px; } QGroupBox::title { subcontrol-origin: margin; left: 10px; }");
     
     QHBoxLayout *queryLayout = new QHBoxLayout(groupBox);
     
@@ -78,7 +78,7 @@ void ReportPage::setupUI()
 
     // 查询按钮
     btnQuery = new QPushButton("⚡ 执行查询", this);
-    btnQuery->setStyleSheet("background-color: #27AE60; color: white; font-weight: bold; padding: 10px; border-radius: 5px;");
+    btnQuery->setProperty("buttonRole", "mint");
     
     queryLayout->addLayout(form1);
     queryLayout->addLayout(form2);
@@ -88,7 +88,6 @@ void ReportPage::setupUI()
     // 2. 报表展示区 (Tabs)
     // ==========================================
     tabWidget = new QTabWidget(this);
-    tabWidget->setStyleSheet("QTabBar::tab { padding: 8px 20px; font-weight: bold; }");
 
     // 表1：每日流水收支
     tableDailySummary = new QTableView(this);

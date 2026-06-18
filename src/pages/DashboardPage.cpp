@@ -1,8 +1,9 @@
 #include "DashboardPage.h"
+#include "../app/Theme.h"
 
+#include <QFont>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QFont>
 
 DashboardPage::DashboardPage(QWidget *parent)
     : QWidget(parent)
@@ -27,6 +28,7 @@ void DashboardPage::setupUI()
     QFont subtitleFont;
     subtitleFont.setPointSize(12);
     subtitleLabel->setFont(subtitleFont);
+    subtitleLabel->setStyleSheet(Theme::subtleTextStyle());
 
     QGridLayout *cardLayout = new QGridLayout;
     cardLayout->setSpacing(20);
@@ -54,6 +56,11 @@ void DashboardPage::setupUI()
         "暂无记录",
         "今日生活轨迹尚未生成"
         );
+
+    taskCard->setProperty("cardTone", "rose");
+    studyCard->setProperty("cardTone", "lavender");
+    expenseCard->setProperty("cardTone", "peach");
+    timelineCard->setProperty("cardTone", "mint");
 
     cardLayout->addWidget(taskCard, 0, 0);
     cardLayout->addWidget(studyCard, 0, 1);
@@ -95,6 +102,7 @@ QFrame* DashboardPage::createInfoCard(const QString &title,
     QFont descFont;
     descFont.setPointSize(10);
     descLabel->setFont(descFont);
+    descLabel->setStyleSheet(Theme::subtleTextStyle());
 
     layout->addWidget(titleLabel);
     layout->addWidget(valueLabel);

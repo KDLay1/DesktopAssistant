@@ -1,4 +1,5 @@
 #include "addbilldialog.h"
+#include "../app/Theme.h"
 
 #include "core/DatabaseManager.h"
 
@@ -51,6 +52,7 @@ AddBillDialog::AddBillDialog(SmartFillService *fillService, QWidget *parent)
 {
     setWindowTitle("新增账单");
     setMinimumWidth(380);
+    setStyleSheet(Theme::dialogStyle());
 
     setupUI();
     loadInitialData();
@@ -90,7 +92,7 @@ void AddBillDialog::setupUI()
     remarksLineEdit->setPlaceholderText("可选备注");
 
     smartFillHintLabel = new QLabel(this);
-    smartFillHintLabel->setStyleSheet("color: #27ae60; font-size: 12px; font-weight: bold;");
+    smartFillHintLabel->setStyleSheet(Theme::smartHintStyle());
 
     formLayout->addRow("类型", typeComboBox);
     formLayout->addRow("金额", amountSpinBox);

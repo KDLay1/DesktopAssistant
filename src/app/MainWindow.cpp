@@ -7,7 +7,9 @@
 #include "../pages/ReportPage.h"
 #include "../pages/TimelinePage.h"
 #include "../pages/TimerPage.h"
+#include "Theme.h"
 
+#include <QApplication>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
@@ -94,89 +96,5 @@ void MainWindow::setupConnections()
 
 void MainWindow::setupStyle()
 {
-    setStyleSheet(R"(
-        QMainWindow {
-            background-color: #f5f6fa;
-        }
-
-        QListWidget#navList {
-            background-color: #2f3640;
-            color: #f5f6fa;
-            border: none;
-            font-size: 16px;
-            padding-top: 12px;
-        }
-
-        QListWidget#navList::item {
-            height: 44px;
-            padding-left: 18px;
-            border-radius: 8px;
-            margin: 4px 8px;
-        }
-
-        QListWidget#navList::item:hover {
-            background-color: #353b48;
-        }
-
-        QListWidget#navList::item:selected {
-            background-color: #40739e;
-            color: white;
-            font-weight: bold;
-            border: none;
-        }
-
-        QLabel {
-            color: #2f3640;
-        }
-
-        QPushButton {
-            background-color: #40739e;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 8px 14px;
-            font-size: 14px;
-        }
-
-        QPushButton:hover {
-            background-color: #487eb0;
-        }
-
-        QPushButton:pressed {
-            background-color: #273c75;
-        }
-
-        QTableWidget {
-            background-color: white;
-            border: 1px solid #dcdde1;
-            gridline-color: #dcdde1;
-            font-size: 14px;
-        }
-
-        QHeaderView::section {
-            background-color: #f1f2f6;
-            color: #2f3640;
-            padding: 6px;
-            border: none;
-            font-weight: bold;
-        }
-
-        QLineEdit, QTextEdit, QDateEdit {
-            background-color: white;
-            border: 1px solid #dcdde1;
-            border-radius: 6px;
-            padding: 6px;
-            font-size: 14px;
-        }
-
-        QFrame#infoCard {
-            background-color: white;
-            border: 1px solid #dcdde1;
-            border-radius: 12px;
-        }
-
-        QFrame#infoCard:hover {
-            border: 1px solid #40739e;
-        }
-    )");
+    qApp->setStyleSheet(Theme::appStyleSheet());
 }

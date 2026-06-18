@@ -3,9 +3,9 @@
 
 #include <QMainWindow>
 
-//前向声明, 减少.h文件中的头文件依赖
 class QListWidget;
 class QStackedWidget;
+class PomodoroStatsPage;
 
 class MainWindow : public QMainWindow
 {
@@ -22,6 +22,7 @@ private:
 
     QListWidget *navList;
     QStackedWidget *stackedWidget;
+    PomodoroStatsPage *pomodoroStatsPage;
 };
 
 #endif // MAINWINDOW_H

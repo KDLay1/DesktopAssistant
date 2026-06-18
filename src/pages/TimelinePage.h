@@ -18,17 +18,15 @@ public:
 private:
     void setupUi();
     void setupConnections();
+    void generateTimeline();
+    void exportMarkdown();
 
-private:
     QLabel *titleLabel;
     QLabel *descriptionLabel;
-
     QDateEdit *dateEdit;
-
     QPushButton *generateButton;
     QPushButton *exportButton;
-
     QTextEdit *timelineTextEdit;
 };
 
-#endif
+#endif // TIMELINEPAGE_H

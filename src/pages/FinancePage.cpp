@@ -27,6 +27,7 @@
 #include <QRegularExpression>
 #include <QFileDialog>
 #include <QFile>
+#include <QSet>
 #include <QTextStream>
 
 #include "addbilldialog.h"
@@ -35,6 +36,29 @@
 #include "services/smartfillservice.h" // 【新增】包含 SmartFillService 头文件
 #include "models/eventsummary.h"
 #include "models/CategoryID.h"
+
+namespace {
+
+int nextAvailablePrimary(const QMap<QString, quint16> &reverseMap, bool isIncome)
+{
+    QSet<int> usedPrimaries;
+    for (auto it = reverseMap.begin(); it != reverseMap.end(); ++it) {
+        const CategoryID category(it.value());
+        if (category.isIncome() == isIncome) {
+            usedPrimaries.insert(category.primary());
+        }
+    }
+
+    for (int primary = 0; primary < CategoryID::PrimaryCategoryCapacity; ++primary) {
+        if (!usedPrimaries.contains(primary)) {
+            return primary;
+        }
+    }
+
+    return -1;
+}
+
+}
 
 /**
  * @brief 构造函数
@@ -430,8 +454,8 @@ void FinancePage::onImportButtonClicked() {
     // 字典扩容起始ID（硬编码，存在冲突风险）
     quint16 nextCpId = 2000;      // 对手方ID起始值
     quint16 nextSubId = 0xFF50;   // 账户ID起始值
-    int nextIncPrimary = 20;      // 收入分类主分类ID起始值
-    int nextExpPrimary = 20;      // 支出分类主分类ID起始值
+    int nextIncPrimary = nextAvailablePrimary(revCat, true);
+    int nextExpPrimary = nextAvailablePrimary(revCat, false);
 
     int successCount = 0; // 成功导入的账单数
     bool isFirstLine = true; // 是否为首行（标题行）
@@ -468,11 +492,15 @@ void FinancePage::onImportButtonClicked() {
         bool isIncome = (typeStr == "收入");
         // 自动扩容：如果分类不存在，则创建新记录
         if (!revCat.contains(catName)) {
-            // 根据收入/支出类型生成分类ID
-            quint16 newCatId = isIncome ? CategoryID(true, nextIncPrimary++, false, 1).id() 
-                                        : CategoryID(false, nextExpPrimary++, false, 1).id();
+            int &nextPrimary = isIncome ? nextIncPrimary : nextExpPrimary;
+            if (nextPrimary < 0) {
+                continue;
+            }
+            quint16 newCatId = isIncome ? CategoryID(true, nextPrimary, false, 1).id() 
+                                        : CategoryID(false, nextPrimary, false, 1).id();
             DatabaseManager::saveDictItem("dict_category", newCatId, catName);
             revCat[catName] = newCatId;
+            nextPrimary = nextAvailablePrimary(revCat, isIncome);
         }
 
         // --- 容错日期解析引擎 (防 Excel 篡改格式) ---

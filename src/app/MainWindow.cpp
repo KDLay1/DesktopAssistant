@@ -1,21 +1,30 @@
 #include "MainWindow.h"
 
+#include "../pages/CoursePage.h"
 #include "../pages/DashboardPage.h"
 #include "../pages/FinancePage.h"
-#include "../pages/ReportPage.h"
-#include "../pages/CoursePage.h"
-#include "../pages/TimerPage.h"
 #include "../pages/PomodoroStatsPage.h"
+#include "../pages/ReportPage.h"
 #include "../pages/TimelinePage.h"
+#include "../pages/TimerPage.h"
 
-#include <QWidget>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QStackedWidget>
-#include <QHBoxLayout>
+#include <QWidget>
+
+namespace {
+
+constexpr int kStatsPageIndex = 5;
+
+}
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+      navList(nullptr),
+      stackedWidget(nullptr),
+      pomodoroStatsPage(nullptr)
 {
     setupUi();
     setupPages();
@@ -27,51 +36,42 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::setupUi()
 {
-    //设置窗口结构
-    setWindowTitle("LifeMate 桌面生活助手");
+    setWindowTitle("LifeMate");
     resize(1000, 700);
 
-    QWidget *central = new QWidget(this);
-    QHBoxLayout *mainLayout = new QHBoxLayout(central);
+    auto *central = new QWidget(this);
+    auto *mainLayout = new QHBoxLayout(central);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
     navList = new QListWidget(this);
     navList->setObjectName("navList");
     navList->setFocusPolicy(Qt::NoFocus);
-
-    navList->addItem("首页");
-    navList->addItem("记账本");
-    navList->addItem("财务报表");
-    navList->addItem("课程DDL");
-    navList->addItem("学习计时");
-    navList->addItem("计时统计");
-    navList->addItem("生活轨迹");
+    navList->addItem("Dashboard");
+    navList->addItem("Finance");
+    navList->addItem("Reports");
+    navList->addItem("Courses");
+    navList->addItem("Timer");
+    navList->addItem("Pomodoro Stats");
+    navList->addItem("Timeline");
     navList->setFixedWidth(180);
 
     stackedWidget = new QStackedWidget(this);
 
     mainLayout->addWidget(navList);
     mainLayout->addWidget(stackedWidget, 1);
-
     setCentralWidget(central);
 }
 
 void MainWindow::setupPages()
 {
-    DashboardPage *dashboardPage = new DashboardPage(this);
-
-    FinancePage *financePage = new FinancePage(this);
-
-    ReportPage *reportPage = new ReportPage(this);
-
-    CoursePage *coursePage = new CoursePage();
-
-    TimerPage *timerPage = new TimerPage();
-
-    PomodoroStatsPage *pomodoroStatsPage = new PomodoroStatsPage(this);
-
-    TimelinePage *timelinePage = new TimelinePage();
+    auto *dashboardPage = new DashboardPage(this);
+    auto *financePage = new FinancePage(this);
+    auto *reportPage = new ReportPage(this);
+    auto *coursePage = new CoursePage(this);
+    auto *timerPage = new TimerPage(this);
+    pomodoroStatsPage = new PomodoroStatsPage(this);
+    auto *timelinePage = new TimelinePage(this);
 
     stackedWidget->addWidget(dashboardPage);
     stackedWidget->addWidget(financePage);
@@ -84,13 +84,16 @@ void MainWindow::setupPages()
 
 void MainWindow::setupConnections()
 {
-    connect(navList, &QListWidget::currentRowChanged,
-            stackedWidget, &QStackedWidget::setCurrentIndex);
+    connect(navList, &QListWidget::currentRowChanged, stackedWidget, &QStackedWidget::setCurrentIndex);
+    connect(navList, &QListWidget::currentRowChanged, this, [this](int row) {
+        if (row == kStatsPageIndex && pomodoroStatsPage != nullptr) {
+            pomodoroStatsPage->refreshData();
+        }
+    });
 }
 
 void MainWindow::setupStyle()
 {
-    //设置样式
     setStyleSheet(R"(
         QMainWindow {
             background-color: #f5f6fa;

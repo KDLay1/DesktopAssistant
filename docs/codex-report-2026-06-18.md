@@ -1,19 +1,19 @@
-# Codex Report 2026-06-18
+# Codex 报告 2026-06-18
 
-## What changed
+## 本次修改
 
-- Replaced the timeline placeholder page with a simple working implementation.
-- Refreshed pomodoro stats automatically when switching to the stats page.
-- Fixed manual bill creation so income is no longer stored as a refund.
-- Fixed CSV import so newly created finance categories no longer use invalid primary category IDs.
+- 将生活轨迹页从占位页面替换为可实际使用的简单实现。
+- 切换到番茄钟统计页时，自动刷新统计数据。
+- 修复手动新增账单时“收入被错误存成退款”的问题。
+- 修复 CSV 导入时新建财务分类会分配非法主分类编号的问题。
 
-## Verification
+## 验证结果
 
-- Rebuilt the app successfully with:
+- 已成功重新构建程序：
   - `D:\Qt\Tools\CMake_64\bin\cmake.exe --build build\Desktop_Qt_6_11_1_MinGW_64_bit-Debug --parallel 4`
 
-## Remaining follow-ups
+## 后续待处理
 
-- Course-page overlapping-course deletion is still risky and should be narrowed to single-course deletion.
-- Finance query error propagation is still weak in some paths.
-- The current timeline page is intentionally simple and can be polished later if needed.
+- 课程页在课表重叠格子中删除课程仍有误删风险，后续应收敛为单门课程删除。
+- 财务查询失败时，部分路径的错误传递仍然不够清晰。
+- 当前生活轨迹页实现刻意保持简单，后续如果需要可以再做界面和内容优化。

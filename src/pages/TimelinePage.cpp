@@ -61,14 +61,14 @@ void TimelinePage::setupUi()
 {
     auto *mainLayout = new QVBoxLayout(this);
 
-    titleLabel = new QLabel("Timeline", this);
+    titleLabel = new QLabel("生活轨迹", this);
     QFont titleFont;
     titleFont.setPointSize(20);
     titleFont.setBold(true);
     titleLabel->setFont(titleFont);
 
     descriptionLabel = new QLabel(
-        "Generate a daily timeline from courses, tasks, pomodoro records, life events, and finance data.",
+        "按日期汇总课程、DDL、番茄钟、生活事件和财务记录，生成当天的生活轨迹。",
         this);
     descriptionLabel->setWordWrap(true);
 
@@ -76,8 +76,8 @@ void TimelinePage::setupUi()
     dateEdit->setCalendarPopup(true);
     dateEdit->setDate(QDate::currentDate());
 
-    generateButton = new QPushButton("Generate", this);
-    exportButton = new QPushButton("Export Markdown", this);
+    generateButton = new QPushButton("生成时间线", this);
+    exportButton = new QPushButton("导出 Markdown", this);
 
     auto *topLayout = new QHBoxLayout;
     topLayout->addWidget(dateEdit);
@@ -86,7 +86,7 @@ void TimelinePage::setupUi()
     topLayout->addStretch();
 
     timelineTextEdit = new QTextEdit(this);
-    timelineTextEdit->setPlaceholderText("Generate a timeline to see the daily summary here.");
+    timelineTextEdit->setPlaceholderText("点击“生成时间线”后，这里会显示当天的生活轨迹。");
 
     mainLayout->addWidget(titleLabel);
     mainLayout->addWidget(descriptionLabel);
@@ -121,7 +121,7 @@ void TimelinePage::generateTimeline()
     courseQuery.bindValue(":date", isoDate);
     if (courseQuery.exec()) {
         while (courseQuery.next()) {
-            QString body = QString("Course: %1").arg(courseQuery.value(0).toString().trimmed());
+            QString body = QString("课程：%1").arg(courseQuery.value(0).toString().trimmed());
             const QString location = courseQuery.value(3).toString().trimmed();
             const QString teacher = courseQuery.value(4).toString().trimmed();
             if (!location.isEmpty()) {
@@ -147,7 +147,7 @@ void TimelinePage::generateTimeline()
     if (taskQuery.exec()) {
         while (taskQuery.next()) {
             const QString deadline = taskQuery.value(2).toString().trimmed();
-            const QString body = QString("DDL: %1 - %2 [P%3, %4]")
+            const QString body = QString("DDL：%1 - %2 [优先级%3，%4]")
                                      .arg(taskQuery.value(0).toString().trimmed(),
                                           taskQuery.value(1).toString().trimmed())
                                      .arg(taskQuery.value(3).toInt())
@@ -170,7 +170,7 @@ void TimelinePage::generateTimeline()
     pomodoroQuery.bindValue(":date", isoDate);
     if (pomodoroQuery.exec()) {
         while (pomodoroQuery.next()) {
-            const QString body = QString("Pomodoro: %1 (%2 min)")
+            const QString body = QString("番茄钟：%1（%2 分钟）")
                                      .arg(pomodoroQuery.value(0).toString().trimmed())
                                      .arg(pomodoroQuery.value(1).toInt());
             addTimedItem(timedItems, normalizeTime(pomodoroQuery.value(2).toString()), body);
@@ -186,7 +186,7 @@ void TimelinePage::generateTimeline()
     eventQuery.bindValue(":prefix", isoDate + "%");
     if (eventQuery.exec()) {
         while (eventQuery.next()) {
-            QString body = QString("Life event [%1]: %2")
+            QString body = QString("生活事件[%1]：%2")
                                .arg(eventQuery.value(0).toString().trimmed(),
                                     eventQuery.value(1).toString().trimmed());
             const QString description = eventQuery.value(2).toString().trimmed();
@@ -214,7 +214,7 @@ void TimelinePage::generateTimeline()
     billQuery.bindValue(":day_number", dayNumber);
     if (billQuery.exec()) {
         while (billQuery.next()) {
-            QString body = QString("Bill: %1 CNY")
+            QString body = QString("账单：%1 元")
                                .arg(QString::number(billQuery.value(0).toInt() / 100.0, 'f', 2));
             const QString category = billQuery.value(3).toString().trimmed();
             const QString subject = billQuery.value(4).toString().trimmed();
@@ -227,10 +227,10 @@ void TimelinePage::generateTimeline()
                 body += QString(" -> %1").arg(counterpart);
             }
             if (!subject.isEmpty()) {
-                body += QString(" via %1").arg(subject);
+                body += QString("，账户：%1").arg(subject);
             }
             if (!remarks.isEmpty()) {
-                body += QString(" | %1").arg(remarks);
+                body += QString("，备注：%1").arg(remarks);
             }
             addTimedItem(timedItems, normalizeTime(billQuery.value(2).toString()), body);
         }
@@ -245,13 +245,13 @@ void TimelinePage::generateTimeline()
     financeQuery.bindValue(":date", isoDate);
     if (financeQuery.exec()) {
         while (financeQuery.next()) {
-            QString body = QString("Legacy finance: %1 %2 [%3]")
+            QString body = QString("旧版财务：%1 %2 [%3]")
                                .arg(financeQuery.value(0).toString().trimmed(),
                                     QString::number(financeQuery.value(1).toDouble(), 'f', 2),
                                     financeQuery.value(2).toString().trimmed());
             const QString note = financeQuery.value(3).toString().trimmed();
             if (!note.isEmpty()) {
-                body += QString(" | %1").arg(note);
+                body += QString("，备注：%1").arg(note);
             }
             const QString timeText = normalizeTime(financeQuery.value(4).toString());
             if (timeText.isEmpty()) {
@@ -267,16 +267,16 @@ void TimelinePage::generateTimeline()
     });
 
     QStringList lines;
-    lines << QString("# Timeline for %1").arg(isoDate) << "";
+    lines << QString("# %1 生活轨迹").arg(isoDate) << "";
 
     if (timedItems.isEmpty() && untimedItems.isEmpty()) {
-        lines << "No records were found for this date.";
+        lines << "当天没有找到相关记录。";
         timelineTextEdit->setPlainText(lines.join('\n'));
         return;
     }
 
     if (!timedItems.isEmpty()) {
-        lines << "## Timed Records";
+        lines << "## 按时间记录";
         for (const TimelineItem &item : std::as_const(timedItems)) {
             lines << item.line;
         }
@@ -284,7 +284,7 @@ void TimelinePage::generateTimeline()
     }
 
     if (!untimedItems.isEmpty()) {
-        lines << "## Untimed Records";
+        lines << "## 未记录具体时间";
         lines.append(untimedItems);
     }
 
@@ -295,20 +295,20 @@ void TimelinePage::exportMarkdown()
 {
     const QString content = timelineTextEdit->toPlainText().trimmed();
     if (content.isEmpty()) {
-        QMessageBox::information(this, "Nothing to Export", "Generate a timeline first.");
+        QMessageBox::information(this, "提示", "请先生成时间线。");
         return;
     }
 
     const QString defaultName = QString("timeline_%1.md").arg(dateEdit->date().toString("yyyy-MM-dd"));
     const QString filePath = QFileDialog::getSaveFileName(
-        this, "Export Markdown", defaultName, "Markdown Files (*.md)");
+        this, "导出 Markdown", defaultName, "Markdown Files (*.md)");
     if (filePath.isEmpty()) {
         return;
     }
 
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, "Export Failed", "Could not write the selected file.");
+        QMessageBox::warning(this, "导出失败", "无法写入所选文件。");
         return;
     }
 
@@ -316,5 +316,5 @@ void TimelinePage::exportMarkdown()
     out << content;
     file.close();
 
-    QMessageBox::information(this, "Export Complete", "Markdown file saved successfully.");
+    QMessageBox::information(this, "导出成功", "Markdown 文件已保存。");
 }

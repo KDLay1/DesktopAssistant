@@ -49,7 +49,7 @@ AddBillDialog::AddBillDialog(SmartFillService *fillService, QWidget *parent)
       m_nextExpenseCategoryPrimary(10),
       m_nextIncomeCategoryPrimary(10)
 {
-    setWindowTitle("Add Bill");
+    setWindowTitle("新增账单");
     setMinimumWidth(380);
 
     setupUI();
@@ -71,13 +71,13 @@ void AddBillDialog::setupUI()
     auto *formLayout = new QFormLayout();
 
     typeComboBox = new QComboBox(this);
-    typeComboBox->addItem("Expense", 0);
-    typeComboBox->addItem("Income", 1);
+    typeComboBox->addItem("支出", 0);
+    typeComboBox->addItem("收入", 1);
 
     amountSpinBox = new QDoubleSpinBox(this);
     amountSpinBox->setRange(0.01, 9999999.99);
     amountSpinBox->setDecimals(2);
-    amountSpinBox->setSuffix(" CNY");
+    amountSpinBox->setSuffix(" 元");
 
     counterpartComboBox = new QComboBox(this);
     subjectComboBox = new QComboBox(this);
@@ -87,19 +87,19 @@ void AddBillDialog::setupUI()
     dateEdit->setCalendarPopup(true);
 
     remarksLineEdit = new QLineEdit(this);
-    remarksLineEdit->setPlaceholderText("Optional note");
+    remarksLineEdit->setPlaceholderText("可选备注");
 
     smartFillHintLabel = new QLabel(this);
     smartFillHintLabel->setStyleSheet("color: #27ae60; font-size: 12px; font-weight: bold;");
 
-    formLayout->addRow("Type", typeComboBox);
-    formLayout->addRow("Amount", amountSpinBox);
-    formLayout->addRow("Date", dateEdit);
-    formLayout->addRow("Counterpart", counterpartComboBox);
+    formLayout->addRow("类型", typeComboBox);
+    formLayout->addRow("金额", amountSpinBox);
+    formLayout->addRow("日期", dateEdit);
+    formLayout->addRow("对手方", counterpartComboBox);
     formLayout->addRow("", smartFillHintLabel);
-    formLayout->addRow("Subject", subjectComboBox);
-    formLayout->addRow("Category", categoryComboBox);
-    formLayout->addRow("Remarks", remarksLineEdit);
+    formLayout->addRow("账户", subjectComboBox);
+    formLayout->addRow("分类", categoryComboBox);
+    formLayout->addRow("备注", remarksLineEdit);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &AddBillDialog::onAcceptClicked);
@@ -112,7 +112,7 @@ void AddBillDialog::setupUI()
 void AddBillDialog::loadInitialData()
 {
     counterpartComboBox->clear();
-    counterpartComboBox->addItem("-- Select --", 0);
+    counterpartComboBox->addItem("-- 请选择 --", 0);
     const auto counterparts = DatabaseManager::loadDict("dict_counterpart");
     for (auto it = counterparts.begin(); it != counterparts.end(); ++it) {
         counterpartComboBox->addItem(it.value(), it.key());
@@ -120,10 +120,10 @@ void AddBillDialog::loadInitialData()
             m_nextCounterpartId = it.key() + 1;
         }
     }
-    counterpartComboBox->addItem("+ Add counterpart...", -1);
+    counterpartComboBox->addItem("+ 新增对手方...", -1);
 
     subjectComboBox->clear();
-    subjectComboBox->addItem("-- Select --", 0);
+    subjectComboBox->addItem("-- 请选择 --", 0);
     const auto subjects = DatabaseManager::loadDict("dict_subject");
     for (auto it = subjects.begin(); it != subjects.end(); ++it) {
         subjectComboBox->addItem(it.value(), it.key());
@@ -131,17 +131,17 @@ void AddBillDialog::loadInitialData()
             m_nextSubjectId = it.key() + 1;
         }
     }
-    subjectComboBox->addItem("+ Add subject...", -1);
+    subjectComboBox->addItem("+ 新增账户...", -1);
 
     categoryComboBox->clear();
-    categoryComboBox->addItem("-- Select --", 0);
+    categoryComboBox->addItem("-- 请选择 --", 0);
     const auto categories = DatabaseManager::loadDict("dict_category");
     for (auto it = categories.begin(); it != categories.end(); ++it) {
         categoryComboBox->addItem(it.value(), it.key());
     }
     m_nextIncomeCategoryPrimary = nextAvailablePrimary(categories, true, m_nextIncomeCategoryPrimary);
     m_nextExpenseCategoryPrimary = nextAvailablePrimary(categories, false, m_nextExpenseCategoryPrimary);
-    categoryComboBox->addItem("+ Add category...", -1);
+    categoryComboBox->addItem("+ 新增分类...", -1);
 }
 
 void AddBillDialog::onCounterpartActivated(int index)
@@ -151,7 +151,7 @@ void AddBillDialog::onCounterpartActivated(int index)
     }
 
     bool ok = false;
-    const QString text = QInputDialog::getText(this, "New Counterpart", "Name:", QLineEdit::Normal, "", &ok).trimmed();
+    const QString text = QInputDialog::getText(this, "新增对手方", "名称：", QLineEdit::Normal, "", &ok).trimmed();
     if (!ok || text.isEmpty()) {
         counterpartComboBox->setCurrentIndex(0);
         return;
@@ -171,7 +171,7 @@ void AddBillDialog::onSubjectActivated(int index)
     }
 
     bool ok = false;
-    const QString text = QInputDialog::getText(this, "New Subject", "Name:", QLineEdit::Normal, "", &ok).trimmed();
+    const QString text = QInputDialog::getText(this, "新增账户", "名称：", QLineEdit::Normal, "", &ok).trimmed();
     if (!ok || text.isEmpty()) {
         subjectComboBox->setCurrentIndex(0);
         return;
@@ -191,7 +191,7 @@ void AddBillDialog::onCategoryActivated(int index)
     }
 
     bool ok = false;
-    const QString text = QInputDialog::getText(this, "New Category", "Name:", QLineEdit::Normal, "", &ok).trimmed();
+    const QString text = QInputDialog::getText(this, "新增分类", "名称：", QLineEdit::Normal, "", &ok).trimmed();
     if (!ok || text.isEmpty()) {
         categoryComboBox->setCurrentIndex(0);
         return;
@@ -200,7 +200,7 @@ void AddBillDialog::onCategoryActivated(int index)
     const bool isIncome = typeComboBox->currentIndex() == 1;
     int &nextPrimary = isIncome ? m_nextIncomeCategoryPrimary : m_nextExpenseCategoryPrimary;
     if (nextPrimary < 0) {
-        QMessageBox::warning(this, "No Slot", "No category slot is available for this type.");
+        QMessageBox::warning(this, "提示", "当前类型已没有可用的新分类编号。");
         categoryComboBox->setCurrentIndex(0);
         return;
     }
@@ -220,7 +220,7 @@ void AddBillDialog::onCategoryActivated(int index)
 void AddBillDialog::onAcceptClicked()
 {
     if (amountSpinBox->value() <= 0) {
-        QMessageBox::warning(this, "Invalid Amount", "Amount must be greater than zero.");
+        QMessageBox::warning(this, "提示", "金额必须大于 0。");
         return;
     }
 
@@ -228,7 +228,7 @@ void AddBillDialog::onAcceptClicked()
     const int subjectId = subjectComboBox->currentData().toInt();
     const int categoryId = categoryComboBox->currentData().toInt();
     if (counterpartId <= 0 || subjectId <= 0 || categoryId <= 0) {
-        QMessageBox::warning(this, "Incomplete", "Please select counterpart, subject, and category.");
+        QMessageBox::warning(this, "提示", "请选择对手方、账户和分类。");
         return;
     }
 
@@ -260,7 +260,7 @@ void AddBillDialog::onCounterpartChanged(int index)
         categoryComboBox->setCurrentIndex(categoryIndex);
     }
 
-    smartFillHintLabel->setText(QString("Smart fill confidence: %1").arg(suggestion.confidenceLevel()));
+    smartFillHintLabel->setText(QString("智能填充置信度：%1").arg(suggestion.confidenceLevel()));
 }
 
 Bill AddBillDialog::getBill() const

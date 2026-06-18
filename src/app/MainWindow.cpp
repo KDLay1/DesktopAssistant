@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::setupUi()
 {
-    setWindowTitle("LifeMate");
+    setWindowTitle("LifeMate 桌面生活助手");
     resize(1000, 700);
 
     auto *central = new QWidget(this);
@@ -47,13 +47,13 @@ void MainWindow::setupUi()
     navList = new QListWidget(this);
     navList->setObjectName("navList");
     navList->setFocusPolicy(Qt::NoFocus);
-    navList->addItem("Dashboard");
-    navList->addItem("Finance");
-    navList->addItem("Reports");
-    navList->addItem("Courses");
-    navList->addItem("Timer");
-    navList->addItem("Pomodoro Stats");
-    navList->addItem("Timeline");
+    navList->addItem("首页");
+    navList->addItem("记账本");
+    navList->addItem("财务报表");
+    navList->addItem("课程DDL");
+    navList->addItem("学习计时");
+    navList->addItem("计时统计");
+    navList->addItem("生活轨迹");
     navList->setFixedWidth(180);
 
     stackedWidget = new QStackedWidget(this);
